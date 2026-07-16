@@ -8,8 +8,8 @@ case "$cmd" in
   --lint)
     # Lint OpenClaw cron job JSON. Accepts one job, an array, or a {jobs:[…]} / {jobs:{…}}
     # store (the real jobs.json) — lints EACH job. Handles the migrated scheduleIdentity form.
-    src="${2:-/dev/stdin}"
-    /usr/bin/node -e '
+    src="${2:-/dev/stdin}"; [ "$src" = "-" ] && src=/dev/stdin
+    node -e '
       const fs=require("fs");
       let d; try { d=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); }
       catch(e){ console.log("  ❌ invalid JSON: "+e.message); process.exit(1); }
@@ -27,7 +27,7 @@ case "$cmd" in
         if(sc.kind==="cron" && !sc.tz) issues.push("schedule.tz missing — set UTC or e.g. Asia/Jakarta");
         if(sc.kind==="cron" && sc.expr && sc.expr.trim().split(/\s+/).length!==5) issues.push(`schedule.expr is not 5 fields: "${sc.expr}"`);
         const m=j.model||(j.payload&&j.payload.model);
-        if(m && /^modelstudio\//.test(m)) issues.push(`model "${m}" likely REJECTED by allowlist — use provider/model (e.g. qwen/qwen3.5-plus)`);
+        if(m && !/^[^\s/]+\/[^\s]+$/.test(m) && !/^[A-Za-z0-9._-]+$/.test(m)) issues.push(`model "${m}" is not a provider/model id or a bare alias — verify against \`openclaw models\` (allowlist enforced)`);
         if(j.enabled===undefined) issues.push("enabled not set (defaults may surprise you)");
         return issues;
       };
@@ -64,7 +64,7 @@ case "$cmd" in
     [[ -n "$src" && -f "$src" ]] || { echo "  ❌ no cron source found (gateway CLI or jobs store) — pass a file: --audit <jobs.json>"; [[ -n "$tmp" ]] && rm -f "$tmp"; exit 1; }
     defs=""; for cand in ~/.openclaw/cron/jobs.json ~/.openclaw/cron/jobs.json.migrated; do [[ -f "$cand" ]] && { defs="$cand"; break; }; done
     if [[ -n "$live" ]]; then echo "  🔎 cron audit — live (openclaw cron list --json)"; else echo "  🔎 cron audit — $src"; fi
-    /usr/bin/node -e '
+    node -e '
       const fs=require("fs");
       const load=p=>{ try{ return JSON.parse(fs.readFileSync(p,"utf8")); }catch(e){ return null; } };
       const d=load(process.argv[1]); if(!d){ console.log("  ❌ invalid/unreadable JSON"); process.exit(1); }

@@ -1,7 +1,7 @@
 ---
 name: cron-automation
 description: Schedule reliable recurring tasks for an OpenClaw agent. Ships a helper that lints cron job JSON (session-target ↔ payload, timezone, model allowlist), converts WIB↔UTC, and validates schedules — encoding the gotchas that silently break agent crons. Use when setting up, debugging, or auditing scheduled/automated agent jobs.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     emoji: "⏰"
@@ -46,12 +46,14 @@ Reliable scheduled tasks for an OpenClaw agent — JSON cron jobs done right, wi
 ```
 Schedule kinds: `cron` (`expr` + `tz`) · `every` (`everyMs`) · `at` (ISO one-shot).
 
+> Modern OpenClaw can also create jobs with `openclaw cron add --agent <id> --message "…" --model provider/model` (+ schedule flags) and dump them as JSON via `openclaw cron list --json`. The block above is the equivalent **stored** form — what `--lint` validates and `--audit` inspects.
+
 ## ⚠️ The rules that silently break crons
 
 **Session ↔ payload (must match):** `main` → `systemEvent` only (urgent alerts) · `isolated` / `current` → `agentTurn` only (background work). Mismatch = error.
 
 **The 5 classic pitfalls** — `--lint` checks these automatically:
-1. **Wrong model id** — `modelstudio/qwen3.5-plus` ❌ → `qwen/qwen3.5-plus` ✅ (allowlist enforced).
+1. **Wrong/unavailable model id** — models are `provider/model` (or a configured alias); an id outside your allowlist fails. Check the live list with `openclaw models`. A model whose subscription lapsed silently kills every job on it → catch with `--audit`.
 2. **Elevated in isolated** — no `sudo` / `systemctl` / `/var/log` in isolated sessions → use `last -n 5`, `df -h`, `free -m`, or host cron.
 3. **Timeout too short** — set timeout ≈ **2× expected** (complex generation → 600s, not 300s).
 4. **Wrong session type** — see the session↔payload rule above.

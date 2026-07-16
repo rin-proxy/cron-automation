@@ -4,6 +4,10 @@ Example library, model/cost/timeout tables, delivery & monitoring for the `cron-
 
 ## Example library (copy, adjust tz + model, deploy)
 
+> These show the **stored** JSON form (what `--lint` validates). On modern OpenClaw you can also
+> create the same jobs with `openclaw cron add --agent <id> --message "…" --model provider/model`
+> plus schedule flags, and read them back with `openclaw cron list --json`.
+
 **Morning briefing** — `0 2 * * *` UTC (= 09:00 WIB) · isolated · timeout 600s · model `kimi/kimi-for-coding`
 ```json
 { "name": "morning-briefing",
@@ -28,17 +32,23 @@ Example library, model/cost/timeout tables, delivery & monitoring for the `cron-
 | at | ISO | `"at": "2026-05-20T02:00:00Z"` one-shot |
 
 ## Model allowlist & cost
-Invalid model id = instant fail. `modelstudio/qwen3.5-plus` ❌ → `qwen/qwen3.5-plus` ✅ · `kimi/kimi-for-coding` ✅ · `claude-4.7/claude-opus` ✅.
+Model ids are **`provider/model`** (or a configured alias); an id outside the allowlist fails
+instantly. **`openclaw models`** prints the exact ids + aliases configured on your box — that's the
+source of truth (model names age fast, so check it rather than trusting a static list). Pin a job's
+model with `--model provider/model` (`openclaw cron add/edit`) or `payload.model` in the JSON; an
+unset model uses the account default. Current-era examples: `anthropic/claude-opus-4-8`,
+`anthropic/claude-sonnet-5`, `anthropic/claude-haiku-4-5`, `kimi/kimi-for-coding`.
 
-| Task | Model | Why |
+| Task | Pick | Why |
 |---|---|---|
-| Simple reporting | Gemini 2.5 Flash | just reads files |
-| Memory review | Claude Haiku 4.7 | light analysis |
-| Deep reflection | Claude Sonnet 4.7 | pattern recognition |
-| Security audit | Kimi K2.6 (sub) | command execution |
-| Complex analysis | Claude Opus 4.7 | deep reasoning |
+| Simple reporting | a fast/cheap model (Haiku-class) | just reads files |
+| Memory review | a light model | light analysis |
+| Deep reflection / briefing | a mid model (Sonnet-class) | pattern recognition |
+| Complex analysis | a top model (Opus-class) | deep reasoning |
 
-Use the cheapest capable model for routine work; reserve premium for hard reasoning.
+Use the cheapest capable model for routine work; reserve premium for hard reasoning. **A job pinned
+to a model that later leaves your allowlist (e.g. a lapsed subscription) fails silently — catch it
+with `cron-helper.sh --audit`.**
 
 ## Elevated-command restriction (isolated sessions)
 Isolated cron sessions **cannot** run elevated commands.
