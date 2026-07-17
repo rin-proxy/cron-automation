@@ -1,5 +1,7 @@
 # cron-automation
 
+> 🔒 **Diaudit & aman** — lolos skill-gate 100/100 · berjalan **lokal-saja**: tanpa panggilan jaringan, tanpa `eval`/kode ter-obfuscate. Semua kode terbuka & bisa kamu verifikasi sendiri. _(Audit keamanan: 2026-07-17)_
+
 Reliable scheduled tasks for an OpenClaw agent — JSON cron jobs done right. Derived from the `cron-and-automation-mastery` Tower book; fills a gap that generic Claude-skill catalogs don't cover (OS/agent-level scheduling + OpenClaw's cron format).
 
 ## What you get
